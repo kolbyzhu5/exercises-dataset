@@ -1,0 +1,36 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: "0 16 * * *"   # 每天 00:00 (UTC+8)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Sync from upstream
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/hasaneyldrm/exercises-dataset.git || true
+          git fetch upstream main
+          if git merge-base --is-ancestor upstream/main main; then
+            echo "Already up to date with upstream, nothing to do."
+          else
+            git merge upstream/main --no-edit
+            git push origin main
+          fi
